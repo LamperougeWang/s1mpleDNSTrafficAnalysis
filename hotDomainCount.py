@@ -3,9 +3,11 @@ import operator
 import os
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor,wait,as_completed
+from concurrent.futures import ProcessPoolExecutor
 from time import sleep
 import re
 import json
+import multiprocessing
 
 def read_test(n):
     i=0
@@ -31,7 +33,7 @@ def get_dir_file(dirname = None):
     return file_list    
 
 
-def count_domain_name_frequency(traffic_dir_path, file_name):
+def count_domain_name_frequency(traffic_dir_path,json_dir_path, file_name):
     # print(traffic_dir_path)
     # print(file_name)
     file_id = re.findall(r'\d+', file_name)[0]
@@ -56,34 +58,59 @@ def count_domain_name_frequency(traffic_dir_path, file_name):
                             frequency[domain_name] = 1
                         else:
                             frequency[domain_name] += 1
-                        print(domain_name)
-                        n+=1
-                        if (n>20):
-                            break
+                        # print(domain_name)
+                        # n+=1
+                        # if (n>20):
+                        #     break
             # except expression as identifier:
             #     pass
             finally:
-                print("UnicodeDecodeError")
+                # print("UnicodeDecodeError")
                 pass
             
-    sorted_fre = sorted(frequency.items(), key=operator.itemgetter(1),reverse=True)
+    # sorted_fre = sorted(frequency.items(), key=operator.itemgetter(1),reverse=True)
     # print(sorted_fre)
-    json_str = json.dumps(sorted_fre)
+    # json_str = json.dumps(sorted_fre)
 
-    with open(traffic_dir_path+file_id+'.json', 'w') as f:
-        f.write(json_str)
+    with open(json_dir_path+file_id+'.json', 'w') as f:
+        # f.write(json_str)
+        json.dump(frequency,f)
     print(file_id+"finished")
+
+def read_json_into_dict(json_dir_path, file_name, name_dict):
+    print(file_name)
+    with open(json_dir_path+file_name,'r') as json_file:
+        data = json.load(json_file)
+    
+    for item in data:
+        if item[0] not in name_dict:
+            name_dict[item[0]] = 1
+        else:
+            name_dict[item[0]] += item[1]
+    # print(type(data))
+    # print(data)
+    
+    return name_dict
 
 if __name__ == '__main__':
     traffic_dir_path = "/home/guest/nextnet/IPv6_DNS/temp/"
     file_list = get_dir_file(traffic_dir_path)
-    executor = ThreadPoolExecutor(max_workers=50)
+    json_dir_path = "/home/guest/nextnet/IPv6_DNS/tempjsondir/"
+    # json_list = get_dir_file(json_dir_path)
+    name_dict = {}
+
+    executor = ProcessPoolExecutor(max_workers=60)
     f_list = []
     for name in file_list:
-        future = executor.submit(count_domain_name_frequency,traffic_dir_path,name)
-        print(future.result())
+        future = executor.submit(count_domain_name_frequency,traffic_dir_path,json_dir_path,name)
+        print(future.done())
+
+
+    print("Main Process")
+
         # f_list.append(future)
     # print(wait(f_list))
+    
 
 
 
