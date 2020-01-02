@@ -36,7 +36,7 @@ def get_dir_file(dirname = None):
 def count_domain_name_frequency(traffic_dir_path,json_dir_path, file_name):
     # print(traffic_dir_path)
     # print(file_name)
-    file_id = re.findall(r'\d+', file_name)[0]
+    file_id = re.findall(r'\d+', file_name)[-1]
     # print(file_id)
     # print(traffic_dir_path+file_id+'.json')
     # return
@@ -77,6 +77,58 @@ def count_domain_name_frequency(traffic_dir_path,json_dir_path, file_name):
         json.dump(frequency,f)
     print(file_id+"finished")
 
+
+
+def count_domain_name_frequency_v6(traffic_dir_path,json_dir_path, file_name):
+    # print(traffic_dir_path)
+    # print(file_name)
+    file_id = re.findall(r'\d+', file_name)[-1]
+    # print(file_id)
+    # print(traffic_dir_path+file_id+'.json')
+    # return
+    n=0
+    frequency = {}
+    with PcapReader(filename=traffic_dir_path+file_name) as pcap_reader:
+        for pkt in pcap_reader:
+            try:
+                if (IPv6 in pkt):
+                    if (DNS in pkt):
+                        dns = pkt.getlayer('DNS')
+                        if (dns.qr==0):
+                            if hasattr(dns, 'qd') and hasattr(dns.qd, 'qname'):
+                                domain_name = (dns.qd.qname).decode('utf-8',errors="ignore")
+                                if domain_name == None:
+                                    continue
+                                if domain_name.endswith('.arpa.'):
+                                    continue
+                                if domain_name not in frequency:
+                                    frequency[domain_name] = 1
+                                else:
+                                    frequency[domain_name] += 1
+                                # print(domain_name)
+                                # n+=1
+                                # if (n>20):
+                                #     break
+                            
+                            
+                            else:
+                                continue
+                            
+            # except expression as identifier:
+            #     pass
+            finally:
+                # print("UnicodeDecodeError")
+                pass
+            
+    # sorted_fre = sorted(frequency.items(), key=operator.itemgetter(1),reverse=True)
+    # print(sorted_fre)
+    # json_str = json.dumps(sorted_fre)
+
+    with open(json_dir_path+file_id+'.json', 'w') as f:
+        # f.write(json_str)
+        json.dump(frequency,f)
+    print(file_id+" json v6 finished")
+
 def read_json_into_dict(json_dir_path, file_name, name_dict):
     print(file_name)
     with open(json_dir_path+file_name,'r') as json_file:
@@ -95,14 +147,19 @@ def read_json_into_dict(json_dir_path, file_name, name_dict):
 if __name__ == '__main__':
     traffic_dir_path = "/home/guest/nextnet/IPv6_DNS/temp/"
     file_list = get_dir_file(traffic_dir_path)
-    json_dir_path = "/home/guest/nextnet/IPv6_DNS/tempjsondir/"
+    json_dir_path = "/home/guest/nextnet/IPv6_DNS/tempjsondirv6/"
     # json_list = get_dir_file(json_dir_path)
     name_dict = {}
 
-    executor = ProcessPoolExecutor(max_workers=60)
+
+    # print(file_list)
+    # for name in file_list:
+    #     count_domain_name_frequency_v6(traffic_dir_path,json_dir_path,name)
+
+    executor = ProcessPoolExecutor(max_workers=30)
     f_list = []
     for name in file_list:
-        future = executor.submit(count_domain_name_frequency,traffic_dir_path,json_dir_path,name)
+        future = executor.submit(count_domain_name_frequency_v6,traffic_dir_path,json_dir_path,name)
         print(future.done())
 
 
