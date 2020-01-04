@@ -1,3 +1,5 @@
 .vscode
 *.pcap
 *.txt
+*.pdf
+*.json
