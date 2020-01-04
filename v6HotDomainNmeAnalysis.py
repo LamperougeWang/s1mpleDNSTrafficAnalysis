@@ -56,7 +56,7 @@ def annexJsonToDict(json_dir_path):
     return name_dict
 
 def writeAggregatedDictToFile(target_dict, name):
-     with open(name, 'w') as f:
+    with open(name, 'w') as f:
         json.dump(target_dict, f)
 
 def getHotestKey(num, data):
